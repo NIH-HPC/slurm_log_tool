@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <signal.h>
-#include <unistd.h> // getopt
+#include <unistd.h> // getopt, isatty
 
 /* catch SIGINT. That way when interrupted, leave the
    yylex loop and print the summary stats */
@@ -130,6 +130,10 @@ int main(int argc, char **argv) {
                 fprintf(stderr, "Usage: %s [-q] < input\n", argv[0]);
                 return EXIT_FAILURE;
         }
+    }
+    if (isatty(fileno(stdin))) {
+        fprintf(stderr, "No data provided to stdin\n");
+        return EXIT_FAILURE;
     }
 
     // trap sigint
