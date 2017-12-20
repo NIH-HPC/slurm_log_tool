@@ -1,3 +1,4 @@
+/* vim: ft=lex */
 /**********************************************************************************/
 /*                                                                                */
 /*                            PUBLIC DOMAIN NOTICE                                */
@@ -150,16 +151,32 @@ char *event_count[] = {
 %%
 /*** C code ***/
 
+void usage(void) {
+    fputs("SYNOPSIS\n", stderr);
+    fputs("    slurm_log_tool [-qh] < input\n", stderr);
+    fputs("DESCRIPTION\n", stderr);
+    fputs("    Colorize and summarize slurm logs in batch\n", stderr);
+    fputs("    or streaming. In streaming mode, hitting Ctrl-C\n", stderr);
+    fputs("    prints out a summary of observed events before exiting.\n", stderr);
+    fputs("OPTIONS\n", stderr);
+    fputs("    -q   quiet mode - don't copy the log, just write a\n", stderr);
+    fputs("         summary at the end\n", stderr);
+    fputs("    -h   show this help message\n", stderr);
+    fputs("EXAMPLE\n", stderr);
+    fputs("    tail -f /var/log/slurm/ctld.log | slurm_log_tool\n", stderr);
+    fputs("    tail -n 1000000 /var/log/slurm/ctld.log | slurm_log_tool -q\n", stderr);
+}
+
 int main(int argc, char **argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "qfh")) != -1) {
+    while ((opt = getopt(argc, argv, "qh")) != -1) {
         switch (opt) {
             case 'q': quiet = true; break;
             case 'h':
-                fprintf(stderr, "Usage: %s [-q] < input\n", argv[0]);
+                usage();
                 return EXIT_SUCCESS;
             default:
-                fprintf(stderr, "Usage: %s [-q] < input\n", argv[0]);
+                usage();
                 return EXIT_FAILURE;
         }
     }
