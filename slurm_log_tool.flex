@@ -58,10 +58,10 @@ bool quiet = false;
 /* color, and description. Cuts down on repetitive code                           */
 /**********************************************************************************/
 #define EVENT_TABLE \
-  X(job_submit, "\033[38;5;39m",  "Submissions (job or array)") \
-  X(sched_main, "\033[38;5;105m", "Jobs started by main scheduler") \
-  X(sched_bf,   "\033[38;5;141m",  "Jobs started by backfill") \
-  X(job_comp,   "\033[38;5;192m",  "Jobs completed") \
+  X(job_submit, "\033[38;5;33m",  "Submissions (job or array)") \
+  X(sched_main, "\033[38;5;135m", "Jobs started by main scheduler") \
+  X(sched_bf,   "\033[38;5;177m",  "Jobs started by backfill") \
+  X(job_comp,   "\033[38;5;28m",  "Jobs completed") \
   X(warn_proc_time, "\033[38;5;202m", "WARN: Note very large procesing time") \
   X(warn_retry_size, "\033[38;5;202m", "WARN: agent retry_list size is...") \
   X(err_conn_fail, "\033[38;5;250m\033[48;5;124m", "ERR : Communication connection failure") \
