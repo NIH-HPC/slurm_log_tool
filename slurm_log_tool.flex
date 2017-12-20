@@ -185,10 +185,11 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    // trap sigint
+    // trap sigint. the signal handler sets a variable that results in 
+    // yylex returning at the next newline. Then the summary is printed
     signal(SIGINT, intHandler);
     yylex();
-    fprintf(stderr, "----------------------------------------------------------------------\n");
+    fprintf(stderr, "\n----------------------------------------------------------------------\n");
 #define X(name, b, c) if (event_count[name] > 0) {\
      fprintf(stderr, "%-45s: %6i\n", event_desc[name], event_count[name]); }
 EVENT_TABLE
