@@ -1,4 +1,4 @@
-/* vim: ft=lex */
+/* vim: set ft=lex : */
 /**********************************************************************************/
 /*                                                                                */
 /*                            PUBLIC DOMAIN NOTICE                                */
@@ -58,7 +58,7 @@ bool quiet = false;
 /* color, and description. Cuts down on repetitive code                           */
 /**********************************************************************************/
 #define EVENT_TABLE \
-  X(job_submit, "\033[38;5;39m",  "Jobs submitted") \
+  X(job_submit, "\033[38;5;39m",  "Submissions (job or array)") \
   X(sched_main, "\033[38;5;105m", "Jobs started by main scheduler") \
   X(sched_bf,   "\033[38;5;141m",  "Jobs started by backfill") \
   X(job_comp,   "\033[38;5;192m",  "Jobs completed") \
