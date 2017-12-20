@@ -25,11 +25,7 @@
 /*                                                                                */
 /**********************************************************************************/
 
-
-
-
-
-/*** definitions ***/
+/******** definitions ********/
 
 %{
 
@@ -38,20 +34,28 @@
 #include <signal.h>
 #include <unistd.h> // getopt, isatty
 
-/* catch SIGINT. That way when interrupted, leave the
-   yylex loop and print the summary stats */
+/**********************************************************************************/
+/* Catch SIGINT and set a global 'stopit'. That way when interrupted,             */
+/* the yylex loop will exit at the next newline and print the summary stats       */
+/**********************************************************************************/
 static volatile int stopit = false;
 
 void intHandler(int dummy) {
     stopit = true;
 }
 
-// silent switch - just summarize, don't print
+/**********************************************************************************/
+/* variables for parsing the command line                                         */
+/**********************************************************************************/
+
+// in quiet mode the log isn't shown. Only the summary of events at the end
+// also - yay more global variables
 bool quiet = false;
 
-/* X-macros for the various events - short name, 
- * color, and description.
- */
+/**********************************************************************************/
+/* X-macros for the various events - short name,                                  */
+/* color, and description. Cuts down on repetitive code                           */
+/**********************************************************************************/
 #define EVENT_TABLE \
   X(job_submit, "\033[38;5;39m",  "Jobs submitted") \
   X(sched_main, "\033[38;5;105m", "Jobs started by main scheduler") \
@@ -100,13 +104,10 @@ char *event_count[] = {
 
 #define event(name) do { \
     if (!quiet) printf("%s%s\033[0m", event_col[name], yytext); \
-    event_count[name]++; \
-    if (stopit) {return;}} while (0)
-    
+    event_count[name]++; } while (0)
 
-/* This is obviously inefficient, but the program is intended to read
- * from tail -f and the buffered input doesn't play well with that
- */
+// This is obviously inefficient, but the program is intended to read
+// from tail -f and the buffered input doesn't play well with that
 #define YY_INPUT(buf,result,max_size) \
     { \
     int c = getchar(); \
@@ -144,7 +145,7 @@ char *event_count[] = {
 "error: cons_res: node ".*" memory is overallocated" { event(err_mem_over); }
 
 . { if (!quiet) ECHO; }
-\n { if (!quiet) ECHO; }
+\n { if (!quiet) ECHO; if (stopit) return; }
 
 %%
 /*** C code ***/
