@@ -187,7 +187,10 @@ int main(int argc, char **argv) {
 
     // trap sigint. the signal handler sets a variable that results in 
     // yylex returning at the next newline. Then the summary is printed
-    signal(SIGINT, intHandler);
+    if (signal(SIGINT, intHandler) == SIG_ERR) {
+        fprintf(stderr, "could not register handler for SIGINT\n");
+        exit(1);
+    }
     yylex();
     fprintf(stderr, "\n----------------------------------------------------------------------\n");
 #define X(name, b, c) if (event_count[name] > 0) {\
