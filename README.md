@@ -24,7 +24,6 @@ If you only want counts use `-q`
 
 ```shell
 $ tail -n 100000 /var/log/slurm/ctld.log | slurm_log_tool -q
-<CTRL-C>
 ----------------------------------------------------------------------
 Jobs submitted                               :   1218
 Jobs started by main scheduler               :    996
