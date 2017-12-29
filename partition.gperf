@@ -1,0 +1,41 @@
+%{ 
+// vim: set ft=C :
+#include <stdlib.h>
+#include <string.h>
+%}
+
+%language=ANSI-C
+%enum
+%struct-type
+%global-table
+%define word-array-name part_table
+%define lookup-function-name part_get
+%define hash-function-name part_hash
+%define constants-prefix PART_
+%define initializer-suffix ,0,0
+
+struct partition {
+    char *name;
+    size_t main_count;
+    size_t bf_count;
+}
+    
+%%
+interactive, 0, 0
+norm, 0, 0
+centos7, 0, 0
+unlimited, 0, 0
+niddk, 0, 0
+multinode, 0, 0
+gpu, 0, 0
+largemem, 0, 0
+nimh, 0, 0
+ccr, 0, 0
+ccrlcb, 0, 0
+ccrclin, 0, 0
+ccrgpu, 0, 0
+ccrlcbgpu, 0, 0
+quick, 0, 0
+student, 0, 0
+phi, 0, 0
+%%

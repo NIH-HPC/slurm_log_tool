@@ -35,6 +35,8 @@
 #include <signal.h>
 #include <unistd.h> // getopt, isatty
 
+#include "partition.c" // gperf generated hash table for partitions
+
 /**********************************************************************************/
 /* Catch SIGINT and set a global 'stopit'. That way when interrupted,             */
 /* the yylex loop will exit at the next newline and print the summary stats       */
@@ -107,6 +109,33 @@ void event(enum EVENT e, const char *str) {
         printf("%s%s\033[0m", event_col[e], str);
     }
     event_count[e]++;
+    struct partition *part = NULL;
+    if (e == sched_main) {
+        const char *partname = strrchr(str, '=');
+        if (partname != NULL) {
+            partname++;
+            part = part_get(partname, strlen(partname));
+            if (part != NULL) {
+                part->main_count++;
+            }
+        }
+        part = NULL;
+    } else if (e == sched_bf) {
+        const char *partname_start = strstr(str, " in ");
+        const char *partname_end = strstr(str, " on ");
+        if (partname_start != NULL && partname_end != NULL) {
+            partname_start += 4;
+            size_t partname_len = partname_end - partname_start;
+            char partname[partname_len + 1];
+            partname[partname_len] = '\0';
+            strncpy(partname, partname_start, partname_len);
+            part = part_get(partname, strlen(partname));
+            if (part != NULL) {
+                part->bf_count++;
+            }
+        }
+        part = NULL;
+    }
 }
 
 // This is obviously inefficient, but the program is intended to read
@@ -121,13 +150,14 @@ void event(enum EVENT e, const char *str) {
 
 %}
 
+IDL    [a-zA-Z0-9_-]
 
 %option noyywrap
 
 %%
 
-"sched:"/" Allocate" { event(sched_main, yytext); }
-"backfill:"/" Started" { event(sched_bf, yytext); }
+"sched: Allocate JobID=".*Partition={IDL}+ { event(sched_main, yytext); }
+"backfill: Started JobId".*" in "{IDL}+" on "{IDL}+ { event(sched_bf, yytext); }
 "job_complete: "/.*(WEXIT|WTERM)     { event(job_comp, yytext); }
 "Job submit request" { event(job_submit, yytext); }
 
@@ -148,7 +178,7 @@ void event(enum EVENT e, const char *str) {
 "error: cons_res: node ".*" memory is overallocated" { event(err_mem_over, yytext); }
 
 . { if (!quiet) ECHO; }
-\n { if (!quiet) ECHO; if (stopit) return; }
+\n { if (!quiet) ECHO; if (stopit) return 0; }
 
 %%
 /*** C code ***/
@@ -194,11 +224,24 @@ int main(int argc, char **argv) {
         exit(1);
     }
     yylex();
-    fprintf(stderr, "\n----------------------------------------------------------------------\n");
+    fprintf(stderr, "\n--------------------- EVENTS ------------------------\n");
 #define X(name, b, c) if (event_count[name] > 0) {\
-     fprintf(stderr, "%-45s: %6zu\n", event_desc[name], event_count[name]); }
+     fprintf(stderr, "%43s  | %6zu\n", event_desc[name], event_count[name]); }
 EVENT_TABLE
 #undef X
-    fprintf(stderr, "----------------------------------------------------------------------\n");
+    fprintf(stderr, "\n--------------------- SCHEDULED ---------------------\n");
+    
+    // print the per-partition scheduling events
+    fprintf(stderr, "%16s | %8s | %8s\n", "Partition", "main", "backfill");
+    puts("-----------------|----------|---------");
+    for (size_t i = PART_MIN_HASH_VALUE; i <= PART_MAX_HASH_VALUE; i++) {
+        if (part_table[i].main_count > 0 || part_table[i].bf_count > 0) {
+            fprintf(stderr, "%16s | %8zu | %8zu\n", 
+                part_table[i].name, 
+                part_table[i].main_count,
+                part_table[i].bf_count);
+        }
+    }
+    
     return EXIT_SUCCESS;
 }
