@@ -97,15 +97,17 @@ char *event_col[] = {
 #undef X
 
 #define X(a, b, c) 0,
-char *event_count[] = {
+size_t event_count[] = {
   EVENT_TABLE
 };
 #undef X
 
-
-#define event(name) do { \
-    if (!quiet) printf("%s%s\033[0m", event_col[name], yytext); \
-    event_count[name]++; } while (0)
+void event(enum EVENT e, const char *str) {
+    if (!quiet) {
+        printf("%s%s\033[0m", event_col[e], str);
+    }
+    event_count[e]++;
+}
 
 // This is obviously inefficient, but the program is intended to read
 // from tail -f and the buffered input doesn't play well with that
@@ -124,26 +126,26 @@ char *event_count[] = {
 
 %%
 
-"sched:"/" Allocate" { event(sched_main); }
-"backfill:"/" Started" { event(sched_bf); }
-"job_complete: "/.*(WEXIT|WTERM)     { event(job_comp); }
-"Job submit request" { event(job_submit); }
+"sched:"/" Allocate" { event(sched_main, yytext); }
+"backfill:"/" Started" { event(sched_bf, yytext); }
+"job_complete: "/.*(WEXIT|WTERM)     { event(job_comp, yytext); }
+"Job submit request" { event(job_submit, yytext); }
 
-"Warning: Note very large processing time" { event(warn_proc_time); }
-"slurmctld: agent retry_list size is "[0-9]+ { event(warn_retry_size); }
+"Warning: Note very large processing time" { event(warn_proc_time, yytext); }
+"slurmctld: agent retry_list size is "[0-9]+ { event(warn_retry_size, yytext); }
 
-"Communication connection failure" { event(err_conn_fail); }
-"error:".*"Zero Bytes were transmitted" { event(err_zero_bytes); }
-"error: Node ping apparently hung, many nodes may be DOWN" { event(err_ping_hung); }
-"error: Nodes ".*" not responding, setting DOWN" { event(err_down); }
-"error: invalid type trying to be freed" { event(err_invalid_type); }
-"error:".*"Socket timed out on send/recv" { event(err_socket_to); }
-"error: Node ".*" has low real_memory size" { event(err_low_mem); }
-"error: slurmdbd:" { event(err_slurmdbd); }
-"error: Prolog" { event(err_prolog); }
-"error:".*"epilog" { event(err_epilog); }
-"slurmd error running".*"Job credential revoked" { event(err_job_cred); }
-"error: cons_res: node ".*" memory is overallocated" { event(err_mem_over); }
+"Communication connection failure" { event(err_conn_fail, yytext); }
+"error:".*"Zero Bytes were transmitted" { event(err_zero_bytes, yytext); }
+"error: Node ping apparently hung, many nodes may be DOWN" { event(err_ping_hung, yytext); }
+"error: Nodes ".*" not responding, setting DOWN" { event(err_down, yytext); }
+"error: invalid type trying to be freed" { event(err_invalid_type, yytext); }
+"error:".*"Socket timed out on send/recv" { event(err_socket_to, yytext); }
+"error: Node ".*" has low real_memory size" { event(err_low_mem, yytext); }
+"error: slurmdbd:" { event(err_slurmdbd, yytext); }
+"error: Prolog" { event(err_prolog, yytext); }
+"error:".*"epilog" { event(err_epilog, yytext); }
+"slurmd error running".*"Job credential revoked" { event(err_job_cred, yytext); }
+"error: cons_res: node ".*" memory is overallocated" { event(err_mem_over, yytext); }
 
 . { if (!quiet) ECHO; }
 \n { if (!quiet) ECHO; if (stopit) return; }
@@ -181,7 +183,7 @@ int main(int argc, char **argv) {
         }
     }
     if (isatty(fileno(stdin))) {
-        fprintf(stderr, "No data provided to stdin\n");
+        fprintf(stderr, "No data provided to stdin. See 'slurm_log_tool -h' for usage.\n");
         return EXIT_FAILURE;
     }
 
@@ -194,7 +196,7 @@ int main(int argc, char **argv) {
     yylex();
     fprintf(stderr, "\n----------------------------------------------------------------------\n");
 #define X(name, b, c) if (event_count[name] > 0) {\
-     fprintf(stderr, "%-45s: %6i\n", event_desc[name], event_count[name]); }
+     fprintf(stderr, "%-45s: %6zu\n", event_desc[name], event_count[name]); }
 EVENT_TABLE
 #undef X
     fprintf(stderr, "----------------------------------------------------------------------\n");
