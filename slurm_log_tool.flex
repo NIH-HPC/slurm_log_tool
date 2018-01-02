@@ -41,10 +41,10 @@
 /* Catch SIGINT and set a global 'stopit'. That way when interrupted,             */
 /* the yylex loop will exit at the next newline and print the summary stats       */
 /**********************************************************************************/
-static volatile int stopit = false;
+sig_atomic_t stopit = 0;
 
-void intHandler(int dummy) {
-    stopit = true;
+void int_handler(int signo) {
+    stopit++;
 }
 
 /**********************************************************************************/
@@ -178,7 +178,28 @@ IDL    [a-zA-Z0-9_-]
 "error: cons_res: node ".*" memory is overallocated" { event(err_mem_over, yytext); }
 
 . { if (!quiet) ECHO; }
-\n { if (!quiet) ECHO; if (stopit) return 0; }
+\n {if (!quiet) ECHO; 
+    if (stopit > 0) {
+        fprintf(stderr, "\n--------------------- EVENTS ------------------------\n");
+    #define X(name, b, c) if (event_count[name] > 0) {\
+         fprintf(stderr, "%43s  | %6zu\n", event_desc[name], event_count[name]); }
+    EVENT_TABLE
+    #undef X
+        fprintf(stderr, "\n--------------------- SCHEDULED ---------------------\n");
+        
+        // print the per-partition scheduling events
+        fprintf(stderr, "%16s | %8s | %8s\n", "Partition", "main", "backfill");
+        puts("-----------------|----------|---------");
+        for (size_t i = PART_MIN_HASH_VALUE; i <= PART_MAX_HASH_VALUE; i++) {
+            if (part_table[i].main_count > 0 || part_table[i].bf_count > 0) {
+                fprintf(stderr, "%16s | %8zu | %8zu\n", 
+                    part_table[i].name, 
+                    part_table[i].main_count,
+                    part_table[i].bf_count);
+            }
+        }
+        return 0;
+    }}
 
 %%
 /*** C code ***/
@@ -217,31 +238,20 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    // trap sigint. the signal handler sets a variable that results in 
-    // yylex returning at the next newline. Then the summary is printed
-    if (signal(SIGINT, intHandler) == SIG_ERR) {
+    // trap sigint. if hit once, prints summary then continues. If hit again
+    // during the pause after the print, return from yylex after the
+    // next newline. Using sigaction since signal is deprecated. Ignore all
+    // other signals while handling SIGINT
+    struct sigaction act;
+    memset(&act, 0, sizeof(struct sigaction));
+    act.sa_handler = int_handler;
+    sigfillset(&act.sa_mask);
+    act.sa_flags = 0;
+    if (sigaction(SIGINT, &act, NULL) == -1) {
         fprintf(stderr, "could not register handler for SIGINT\n");
         exit(1);
     }
     yylex();
-    fprintf(stderr, "\n--------------------- EVENTS ------------------------\n");
-#define X(name, b, c) if (event_count[name] > 0) {\
-     fprintf(stderr, "%43s  | %6zu\n", event_desc[name], event_count[name]); }
-EVENT_TABLE
-#undef X
-    fprintf(stderr, "\n--------------------- SCHEDULED ---------------------\n");
-    
-    // print the per-partition scheduling events
-    fprintf(stderr, "%16s | %8s | %8s\n", "Partition", "main", "backfill");
-    puts("-----------------|----------|---------");
-    for (size_t i = PART_MIN_HASH_VALUE; i <= PART_MAX_HASH_VALUE; i++) {
-        if (part_table[i].main_count > 0 || part_table[i].bf_count > 0) {
-            fprintf(stderr, "%16s | %8zu | %8zu\n", 
-                part_table[i].name, 
-                part_table[i].main_count,
-                part_table[i].bf_count);
-        }
-    }
     
     return EXIT_SUCCESS;
 }
