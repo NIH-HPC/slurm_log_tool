@@ -238,9 +238,8 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    // trap sigint. if hit once, prints summary then continues. If hit again
-    // during the pause after the print, return from yylex after the
-    // next newline. Using sigaction since signal is deprecated. Ignore all
+    // trap sigint. prints summary then exits.
+    // Using sigaction since signal is deprecated. Ignores all
     // other signals while handling SIGINT
     struct sigaction act;
     memset(&act, 0, sizeof(struct sigaction));
