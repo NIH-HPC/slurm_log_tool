@@ -153,7 +153,7 @@ EVENT_TABLE
         
         // print the per-partition scheduling events
         fprintf(stderr, "%16s | %8s | %8s\n", "Partition", "main", "backfill");
-        puts("-----------------|----------|---------");
+        fputs("-----------------|----------|---------\n", stderr);
         for (size_t i = PART_MIN_HASH_VALUE; i <= PART_MAX_HASH_VALUE; i++) {
             if (part_table[i].main_count > 0 || part_table[i].bf_count > 0) {
                 fprintf(stderr, "%16s | %8zu | %8zu\n", 
@@ -206,15 +206,13 @@ IDL    [a-zA-Z0-9_-]
 . { if (!quiet) ECHO; }
 \n {if (!quiet) ECHO; 
     if (stopit > 0) {
-        fputs("got SIGINT\n", stderr); 
         return 0;
     }
     if (printit > 0) {
         printit = 0;
-        fputs("got SIGUSR1\n", stdout); 
-        //print_summary();
-        //fputs("Waiting 1s before continuing\n", stderr);
-        //sleep(1);
+        print_summary();
+        fputs("\n", stderr);
+        sleep(3);
     } }
 
 %%
@@ -228,7 +226,7 @@ void usage(void) {
     fputs("    or streaming. In streaming mode, hitting Ctrl-C\n", stderr);
     fputs("    prints out a summary of observed events before exiting.\n", stderr);
     fputs("    When receiving SIGUSR1, slurm_log_tool shows current stats\n", stderr);
-    fputs("    summary, pauses for 5s, and then continues\n", stderr);
+    fputs("    summary, pauses for 3s, and then continues\n", stderr);
     fputs("OPTIONS\n", stderr);
     fputs("    -q   quiet mode - don't copy the log, just write a\n", stderr);
     fputs("         summary at the end\n", stderr);
@@ -268,12 +266,14 @@ int main(int argc, char **argv) {
         fprintf(stderr, "could not register handler for SIGINT\n");
         exit(1);
     }
-    // trap sigusr1. prints summary, pause 5s, then continue
+    // trap sigusr1. prints summary, pause 5s, then continue; this one
+    // needs to specify SA_RESTART - otherwise it won't continue a read
+    // and quit instead
     struct sigaction act_usr1;
     memset(&act_usr1, 0, sizeof(struct sigaction));
     act_usr1.sa_handler = usr1_handler;
     sigfillset(&act_usr1.sa_mask);
-    act_usr1.sa_flags = 0;
+    act_usr1.sa_flags = SA_RESTART;
     if (sigaction(SIGUSR1, &act_usr1, NULL) == -1) {
         fprintf(stderr, "could not register handler for SIGUSR1\n");
         exit(1);
