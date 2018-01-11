@@ -270,14 +270,14 @@ int main(int argc, char **argv) {
     }
     // trap sigusr1. prints summary, pause 5s, then continue
     struct sigaction act_usr1;
-    /*memset(&act_usr1, 0, sizeof(struct sigaction));
+    memset(&act_usr1, 0, sizeof(struct sigaction));
     act_usr1.sa_handler = usr1_handler;
     sigfillset(&act_usr1.sa_mask);
     act_usr1.sa_flags = 0;
     if (sigaction(SIGUSR1, &act_usr1, NULL) == -1) {
         fprintf(stderr, "could not register handler for SIGUSR1\n");
         exit(1);
-    }*/
+    }
 
     yylex();
     print_summary();
