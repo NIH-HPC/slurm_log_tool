@@ -42,9 +42,14 @@
 /* the yylex loop will exit at the next newline and print the summary stats       */
 /**********************************************************************************/
 sig_atomic_t stopit = 0;
+sig_atomic_t printit = 0;
 
 void int_handler(int signo) {
     stopit++;
+}
+
+void usr1_handler(int signo) {
+    printit++;
 }
 
 /**********************************************************************************/
@@ -138,6 +143,27 @@ void event(enum EVENT e, const char *str) {
     }
 }
 
+void print_summary(void) {
+        fprintf(stderr, "\n--------------------- EVENTS ------------------------\n");
+#define X(name, b, c) if (event_count[name] > 0) {\
+         fprintf(stderr, "%43s  | %6zu\n", event_desc[name], event_count[name]); }
+EVENT_TABLE
+#undef X
+        fprintf(stderr, "\n--------------------- SCHEDULED ---------------------\n");
+        
+        // print the per-partition scheduling events
+        fprintf(stderr, "%16s | %8s | %8s\n", "Partition", "main", "backfill");
+        fputs("-----------------|----------|---------\n", stderr);
+        for (size_t i = PART_MIN_HASH_VALUE; i <= PART_MAX_HASH_VALUE; i++) {
+            if (part_table[i].main_count > 0 || part_table[i].bf_count > 0) {
+                fprintf(stderr, "%16s | %8zu | %8zu\n", 
+                    part_table[i].name, 
+                    part_table[i].main_count,
+                    part_table[i].bf_count);
+            }
+        }
+}
+
 // This is obviously inefficient, but the program is intended to read
 // from tail -f and the buffered input doesn't play well with that
 #define YY_INPUT(buf,result,max_size) \
@@ -180,26 +206,14 @@ IDL    [a-zA-Z0-9_-]
 . { if (!quiet) ECHO; }
 \n {if (!quiet) ECHO; 
     if (stopit > 0) {
-        fprintf(stderr, "\n--------------------- EVENTS ------------------------\n");
-    #define X(name, b, c) if (event_count[name] > 0) {\
-         fprintf(stderr, "%43s  | %6zu\n", event_desc[name], event_count[name]); }
-    EVENT_TABLE
-    #undef X
-        fprintf(stderr, "\n--------------------- SCHEDULED ---------------------\n");
-        
-        // print the per-partition scheduling events
-        fprintf(stderr, "%16s | %8s | %8s\n", "Partition", "main", "backfill");
-        puts("-----------------|----------|---------");
-        for (size_t i = PART_MIN_HASH_VALUE; i <= PART_MAX_HASH_VALUE; i++) {
-            if (part_table[i].main_count > 0 || part_table[i].bf_count > 0) {
-                fprintf(stderr, "%16s | %8zu | %8zu\n", 
-                    part_table[i].name, 
-                    part_table[i].main_count,
-                    part_table[i].bf_count);
-            }
-        }
         return 0;
-    }}
+    }
+    if (printit > 0) {
+        printit = 0;
+        print_summary();
+        fputs("\n", stderr);
+        sleep(3);
+    } }
 
 %%
 /*** C code ***/
@@ -211,6 +225,8 @@ void usage(void) {
     fputs("    Colorize and summarize slurm logs in batch\n", stderr);
     fputs("    or streaming. In streaming mode, hitting Ctrl-C\n", stderr);
     fputs("    prints out a summary of observed events before exiting.\n", stderr);
+    fputs("    When receiving SIGUSR1, slurm_log_tool shows current stats\n", stderr);
+    fputs("    summary, pauses for 3s, and then continues\n", stderr);
     fputs("OPTIONS\n", stderr);
     fputs("    -q   quiet mode - don't copy the log, just write a\n", stderr);
     fputs("         summary at the end\n", stderr);
@@ -250,7 +266,21 @@ int main(int argc, char **argv) {
         fprintf(stderr, "could not register handler for SIGINT\n");
         exit(1);
     }
+    // trap sigusr1. prints summary, pause 5s, then continue; this one
+    // needs to specify SA_RESTART - otherwise it won't continue a read
+    // and quit instead
+    struct sigaction act_usr1;
+    memset(&act_usr1, 0, sizeof(struct sigaction));
+    act_usr1.sa_handler = usr1_handler;
+    sigfillset(&act_usr1.sa_mask);
+    act_usr1.sa_flags = SA_RESTART;
+    if (sigaction(SIGUSR1, &act_usr1, NULL) == -1) {
+        fprintf(stderr, "could not register handler for SIGUSR1\n");
+        exit(1);
+    }
+
     yylex();
+    print_summary();
     
     return EXIT_SUCCESS;
 }
