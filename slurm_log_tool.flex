@@ -68,7 +68,9 @@ bool quiet = false;
   X(job_submit, "\033[38;5;33m",  "Submissions (job or array)") \
   X(sched_main, "\033[38;5;135m", "Jobs started by main scheduler") \
   X(sched_bf,   "\033[38;5;177m",  "Jobs started by backfill") \
-  X(job_comp,   "\033[38;5;28m",  "Jobs completed") \
+  X(job_comp_ok,   "\033[38;5;28m",  "Jobs completed - OK") \
+  X(job_comp_nok,   "\033[38;5;28;4m",  "Jobs completed - Not OK") \
+  X(job_comp_term,   "\033[38;5;23;4m",  "Jobs completed - Terminated") \
   X(warn_proc_time, "\033[38;5;202m", "WARN: Note very large procesing time") \
   X(warn_retry_size, "\033[38;5;202m", "WARN: agent retry_list size is...") \
   X(err_conn_fail, "\033[38;5;250m\033[48;5;124m", "ERR : Communication connection failure") \
@@ -184,7 +186,9 @@ IDL    [a-zA-Z0-9_-]
 
 "sched: Allocate JobID=".*Partition={IDL}+ { event(sched_main, yytext); }
 "backfill: Started JobId".*" in "{IDL}+" on "{IDL}+ { event(sched_bf, yytext); }
-"job_complete: "/.*(WEXIT|WTERM)     { event(job_comp, yytext); }
+"job_complete: ".*"WEXITSTATUS 0"     { event(job_comp_ok, yytext); }
+"job_complete: ".*WEXITSTATUS" "[1-9][0-9]*     { event(job_comp_nok, yytext); }
+"job_complete: ".*WSIGTERM" "[0-9]+     { event(job_comp_term, yytext); }
 "Job submit request" { event(job_submit, yytext); }
 
 "Warning: Note very large processing time" { event(warn_proc_time, yytext); }
