@@ -82,8 +82,8 @@ bool quiet = false;
   X(err_prolog, "\033[38;5;250m\033[48;5;124m", "ERR : prolog") \
   X(err_epilog, "\033[38;5;250m\033[48;5;124m", "ERR : epilog") \
   X(err_job_cred, "\033[38;5;250m\033[48;5;124m", "ERR : Job credential revoked") \
-  X(err_mem_over, "\033[38;5;250m\033[48;5;124m", "ERR : node .* memory is overallocated")
-
+  X(err_mem_over, "\033[38;5;250m\033[48;5;124m", "ERR : node .* memory is overallocated") \
+  X(err_node_not_resp, "\033[38;5;250m\033[48;5;124m", "ERR : nodes .. not responding")
 
 #define X(a, b, c) a,
 enum EVENT {
@@ -202,6 +202,7 @@ IDL    [a-zA-Z0-9_-]
 "error:".*"epilog" { event(err_epilog, yytext); }
 "slurmd error running".*"Job credential revoked" { event(err_job_cred, yytext); }
 "error: cons_res: node ".*" memory is overallocated" { event(err_mem_over, yytext); }
+"error: Nodes ".*" not responding" { event(err_node_not_resp, yytext); }
 
 . { if (!quiet) ECHO; }
 \n {if (!quiet) ECHO; 
