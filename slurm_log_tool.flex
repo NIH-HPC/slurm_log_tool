@@ -85,7 +85,9 @@ bool quiet = false;
   X(err_epilog, "\033[38;5;250m\033[48;5;124m", "ERR : epilog") \
   X(err_job_cred, "\033[38;5;250m\033[48;5;124m", "ERR : Job credential revoked") \
   X(err_mem_over, "\033[38;5;250m\033[48;5;124m", "ERR : node .* memory is overallocated") \
-  X(err_node_not_resp, "\033[38;5;250m\033[48;5;124m", "ERR : nodes .. not responding")
+  X(err_node_not_resp, "\033[38;5;250m\033[48;5;124m", "ERR : nodes .. not responding") \
+  X(err_gres_underflow, "\033[38;5;250m\033[48;5;124m", "ERR : GRES count underflow") \
+  X(err_mem_underalloc, "\033[38;5;250m\033[48;5;124m", "ERR : memory is underallocated")
 
 #define X(a, b, c) a,
 enum EVENT {
@@ -207,6 +209,8 @@ IDL    [a-zA-Z0-9_-]
 "slurmd error running".*"Job credential revoked" { event(err_job_cred, yytext); }
 "error: cons_res: node ".*" memory is overallocated" { event(err_mem_over, yytext); }
 "error: Nodes ".*" not responding" { event(err_node_not_resp, yytext); }
+"error: gres/".*" GRES count underflow" { event(err_gres_underflow, yytext); }
+"error:".*" memory is under-allocated" { event(err_mem_underalloc, yytext); }
 
 . { if (!quiet) ECHO; }
 \n {if (!quiet) ECHO; 
