@@ -77,7 +77,7 @@ bool quiet = false;
   X(err_zero_bytes, "\033[38;5;250m\033[48;5;124m", "ERR : Zero Bytes were transmitted") \
   X(err_ping_hung, "\033[38;5;250m\033[48;5;124m", "ERR : Node ping apparently hung") \
   X(err_invalid_type, "\033[38;5;250m\033[48;5;124m", "ERR : invalid type trying to be freed") \
-  X(err_socket_to, "\033[38;5;250m\033[48;5;124m", "ERR : Socked timed out") \
+  X(err_socket_to, "\033[38;5;250m\033[48;5;124m", "ERR : Socket timed out") \
   X(err_down, "\033[38;5;250m\033[48;5;124m", "ERR : Nodes .* not responding, setting DOWN") \
   X(err_low_mem, "\033[38;5;250m\033[48;5;124m", "ERR : Node .* has low real_memory size") \
   X(err_slurmdbd, "\033[38;5;250m\033[48;5;124m", "ERR : slurmdbd") \
@@ -184,7 +184,7 @@ IDL    [a-zA-Z0-9_-]
 
 %%
 
-"sched: Allocate JobID=".*Partition={IDL}+ { event(sched_main, yytext); }
+"sched: Allocate JobId=".*Partition={IDL}+ { event(sched_main, yytext); }
 "backfill: Started JobId".*" in "{IDL}+" on "{IDL}+ { event(sched_bf, yytext); }
 "job_complete: ".*"WEXITSTATUS 0"     { event(job_comp_ok, yytext); }
 "job_complete: ".*WEXITSTATUS" "[1-9][0-9]*     { event(job_comp_nok, yytext); }
