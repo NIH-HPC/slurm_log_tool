@@ -28,10 +28,10 @@ multinode, 0, 0
 gpu, 0, 0
 largemem, 0, 0
 ccr, 0, 0
-ccrgpu, 0, 0
 quick, 0, 0
 student, 0, 0
 huygens, 0, 0
 forgo, 0, 0
 persist, 0, 0
+visual, 0, 0
 %%

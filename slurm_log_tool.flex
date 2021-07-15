@@ -187,7 +187,7 @@ IDL    [a-zA-Z0-9_-]
 %%
 
 "sched: Allocate JobId=".*Partition={IDL}+ { event(sched_main, yytext); }
-"backfill: Started JobId".*" in "{IDL}+" on "{IDL}+ { event(sched_bf, yytext); }
+"sched/backfill: _start_job: Started JobId".*" in "{IDL}+" on "{IDL}+ { event(sched_bf, yytext); }
 "job_complete: ".*"WEXITSTATUS 0"     { event(job_comp_ok, yytext); }
 "job_complete: ".*WEXITSTATUS" "[1-9][0-9]*     { event(job_comp_nok, yytext); }
 "job_complete: ".*WSIGTERM" "[0-9]+     { event(job_comp_term, yytext); }
