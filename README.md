@@ -57,4 +57,13 @@ $ tail -n 100000 /var/log/slurm/ctld.log | slurm_log_tool -q
            niddk |      962 |       84
 ```
 
-Requires gperf and flex during build
+Requires gperf, flex during build. A file of partitions (`partitions.txt`) in the format
+
+```
+%%
+part1, 0, 0
+part2, 0, 0
+%%
+```
+
+can be created manually or, if slurm is available, with `make partitions.txt`

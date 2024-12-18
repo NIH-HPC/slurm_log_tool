@@ -1,4 +1,4 @@
-.ONELINE:
+.ONESHELL:
 .PHONY: install clean colors
 
 BINDIR := /usr/local/sbin
@@ -12,9 +12,14 @@ all: slurm_log_tool
 slurm_log_tool.c: slurm_log_tool.flex
 	flex --full -o $@ $<
 
-partition.c: partition.gperf
-	gperf $< > $@
+partition.c: partition.gperf.tmpl partitions.txt
+	tmp="$$(mktemp)"
+	cat $^ > "$${tmp}"
+	gperf "$${tmp}" > $@
 
+partitions.txt:
+	scontrol -o show part | perl -nle 'if (m/PartitionName=(\S+)/) {printf("%s, 0, 0\n", $$1)}' > $@
+	echo "%%" >> $@
 
 slurm_log_tool: slurm_log_tool.c partition.c
 	# partition.c is included in slurm_log_tool.c
