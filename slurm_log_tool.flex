@@ -71,23 +71,29 @@ bool quiet = false;
   X(job_comp_ok,   "\033[38;5;28m",  "Jobs completed - OK") \
   X(job_comp_nok,   "\033[38;5;28;4m",  "Jobs completed - Not OK") \
   X(job_comp_term,   "\033[38;5;23;4m",  "Jobs completed - Terminated") \
-  X(warn_proc_time, "\033[38;5;202m", "WARN: Note very large procesing time") \
+  X(warn_proc_time, "\033[38;5;202m", "WARN: Note very large processing time") \
   X(warn_retry_size, "\033[38;5;202m", "WARN: agent retry_list size is...") \
   X(err_conn_fail, "\033[38;5;250m\033[48;5;124m", "ERR : Communication connection failure") \
+  X(err_send_node_msg, "\033[38;5;250m\033[48;5;124m", "ERR : send_node_msg") \
   X(err_zero_bytes, "\033[38;5;250m\033[48;5;124m", "ERR : Zero Bytes were transmitted") \
   X(err_ping_hung, "\033[38;5;250m\033[48;5;124m", "ERR : Node ping apparently hung") \
   X(err_invalid_type, "\033[38;5;250m\033[48;5;124m", "ERR : invalid type trying to be freed") \
   X(err_socket_to, "\033[38;5;250m\033[48;5;124m", "ERR : Socket timed out") \
-  X(err_down, "\033[38;5;250m\033[48;5;124m", "ERR : Nodes .* not responding, setting DOWN") \
+  X(err_down, "\033[38;5;250m\033[48;5;124m", "ERR : Nodes not responding, setting DOWN") \
   X(err_low_mem, "\033[38;5;250m\033[48;5;124m", "ERR : Node .* has low real_memory size") \
   X(err_slurmdbd, "\033[38;5;250m\033[48;5;124m", "ERR : slurmdbd") \
   X(err_prolog, "\033[38;5;250m\033[48;5;124m", "ERR : prolog") \
   X(err_epilog, "\033[38;5;250m\033[48;5;124m", "ERR : epilog") \
   X(err_job_cred, "\033[38;5;250m\033[48;5;124m", "ERR : Job credential revoked") \
   X(err_mem_over, "\033[38;5;250m\033[48;5;124m", "ERR : node .* memory is overallocated") \
-  X(err_node_not_resp, "\033[38;5;250m\033[48;5;124m", "ERR : nodes .. not responding") \
+  X(err_node_not_resp, "\033[38;5;250m\033[48;5;124m", "ERR : nodes not responding") \
   X(err_gres_underflow, "\033[38;5;250m\033[48;5;124m", "ERR : GRES count underflow") \
-  X(err_mem_underalloc, "\033[38;5;250m\033[48;5;124m", "ERR : memory is underallocated")
+  X(err_mem_underalloc, "\033[38;5;250m\033[48;5;124m", "ERR : memory is underallocated") \
+  X(err_diff_slurm_conf, "\033[38;5;250m\033[48;5;124m", "ERR : slurm.conf mismatch") \
+  X(err_orphan_step, "\033[38;5;250m\033[48;5;124m", "ERR : orphan step") \
+  X(err_security, "\033[38;5;250m\033[48;5;124m", "ERR : security violation") \
+  X(err_find_node_record, "\033[38;5;250m\033[48;5;124m", "ERR : find_node_record") \
+  X(err_job_submit_lua, "\033[38;5;250m\033[48;5;124m", "ERR : job_submit/lua error")
 
 #define X(a, b, c) a,
 enum EVENT {
@@ -197,7 +203,8 @@ IDL    [a-zA-Z0-9_-]
 "slurmctld: agent retry_list size is "[0-9]+ { event(warn_retry_size, yytext); }
 
 "Communication connection failure" { event(err_conn_fail, yytext); }
-"error:".*"Zero Bytes were transmitted" { event(err_zero_bytes, yytext); }
+"error: slurm_send_node_msg" { event(err_send_node_msg, yytext); }
+"error:".*"Zero Bytes were transmitted or received" { event(err_zero_bytes, yytext); }
 "error: Node ping apparently hung, many nodes may be DOWN" { event(err_ping_hung, yytext); }
 "error: Nodes ".*" not responding, setting DOWN" { event(err_down, yytext); }
 "error: invalid type trying to be freed" { event(err_invalid_type, yytext); }
@@ -211,6 +218,11 @@ IDL    [a-zA-Z0-9_-]
 "error: Nodes ".*" not responding" { event(err_node_not_resp, yytext); }
 "error: gres/".*" GRES count underflow" { event(err_gres_underflow, yytext); }
 "error:".*" memory is under-allocated" { event(err_mem_underalloc, yytext); }
+"error: Node ".*"appears to have a different slurm.conf than the slurmctld" { event(err_diff_slurm_conf, yytext); }
+"error: Orphan StepID=".* { event(err_orphan_step, yytext); }
+"error: Security violation=".* { event(err_security, yytext); }
+"error: _find_node_record" { event(err_find_node_record, yytext); }
+"error: job_submit/lua" { event(err_job_submit_lua, yytext); }
 
 . { if (!quiet) ECHO; }
 \n {if (!quiet) ECHO; 
