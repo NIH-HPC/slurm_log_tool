@@ -73,6 +73,7 @@ bool quiet = false;
   X(job_comp_term,   "\033[38;5;23;4m",  "Jobs completed - Terminated") \
   X(warn_proc_time, "\033[38;5;202m", "WARN: Note very large processing time") \
   X(warn_retry_size, "\033[38;5;202m", "WARN: agent retry_list size is...") \
+  X(warn_rpc_rate, "\033[38;5;202m", "WARN: rpc rate limit exceeded") \
   X(err_conn_fail, "\033[38;5;250m\033[48;5;124m", "ERR : Communication connection failure") \
   X(err_send_node_msg, "\033[38;5;250m\033[48;5;124m", "ERR : send_node_msg") \
   X(err_zero_bytes, "\033[38;5;250m\033[48;5;124m", "ERR : Zero Bytes were transmitted") \
@@ -201,6 +202,7 @@ IDL    [a-zA-Z0-9_-]
 
 "Warning: Note very large processing time" { event(warn_proc_time, yytext); }
 "slurmctld: agent retry_list size is "[0-9]+ { event(warn_retry_size, yytext); }
+"RPC rate limit exceeded by uid "[0-9]+ { event(warn_rpc_rate, yytext); }
 
 "Communication connection failure" { event(err_conn_fail, yytext); }
 "error: slurm_send_node_msg" { event(err_send_node_msg, yytext); }
